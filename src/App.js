@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { MyTable } from './compoinents/MyTable'
+import { MyTable } from './components/MyTable'
 
 import './App.css'
 
