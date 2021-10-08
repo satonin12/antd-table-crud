@@ -5,7 +5,6 @@ import {
   Table,
   Typography,
   Form,
-  InputNumber,
   Input,
 } from 'antd'
 
@@ -37,7 +36,25 @@ export const MyTable = () => {
   }
 
   const save = async (key) => {
-    console.log('сохранили')
+    try {
+      const row = await form.validateFields()
+      const dataSource = [...itemsTable],
+        index = dataSource.findIndex((item) => key === item.key)
+
+      if (index > -1) {
+        const item = dataSource[index]
+        dataSource.splice(index, 1, { ...item, ...row })
+        setItemsTable(dataSource)
+        setEditingKey('')
+      } else {
+        dataSource.push(row)
+        setItemsTable(dataSource)
+        setEditingKey('')
+      }
+    } catch (error) {
+      console.log('Validate failed')
+      // TODO: Добавить уведомления об ответе сервера
+    }
   }
 
   // столбцы таблицы
@@ -128,7 +145,7 @@ export const MyTable = () => {
     children,
     ...restProps
   }) => {
-    const inputNode = inputType === 'number' ? <InputNumber /> : <Input />
+    const inputNode = <Input />
     return (
       <td {...restProps}>
         {editing ? (
@@ -139,7 +156,7 @@ export const MyTable = () => {
             }}
             rules={[
               {
-                required: true,
+                // required: true,
                 message: `Please Input ${title}!`,
               },
             ]}
@@ -210,6 +227,7 @@ export const MyTable = () => {
     }
 
     setItemsTable([...dataSource, newDataRow])
+    edit(newDataRow)
   }
 
   const handleDeleteRow = (key) => {
