@@ -1,21 +1,47 @@
 import React, { useEffect, useState } from 'react'
-import {
-  Button,
-  Popconfirm,
-  Table,
-  Typography,
-  Form,
-  Input,
-} from 'antd'
+import { Button, Popconfirm, Table, Typography, Form, Input } from 'antd'
 
 import 'antd/dist/antd.css'
+import { useFetch } from '../../hooks/http.hook'
+import { useMessage } from '../../hooks/message.hook'
 
 export const MyTable = () => {
-  const [error, setError] = useState(null)
-  const [isLoaded, setIsLoaded] = useState(false)
   const [itemsTable, setItemsTable] = useState([])
   const [editingKey, setEditingKey] = useState('')
+  const [loadingTable, setLoadingTable] = useState(false)
+
   const [form] = Form.useForm()
+  const { error, request, clearError } = useFetch()
+  const message = useMessage()
+
+  const getData = async () => {
+    const dataList = await request(
+      'http://178.128.196.163:3000/api/records',
+      'GET'
+    )
+
+    let tmp = dataList.data.map((ele, ind) => {
+      return {
+        key: ind,
+        id: ele._id,
+        name: ele.data.name,
+        address: ele.data.address,
+        phone: ele.data.phone,
+        postal: ele.data.postal,
+        v: ele.__v,
+      }
+    })
+
+    setItemsTable(tmp)
+    message(dataList.status, dataList.statusText, dataList.url)
+    clearError()
+    setLoadingTable(false)
+  }
+
+  useEffect(() => {
+    setLoadingTable(true)
+    getData()
+  }, [])
 
   const isEditing = (record) => record.key === editingKey
 
@@ -35,26 +61,127 @@ export const MyTable = () => {
     setEditingKey('')
   }
 
+  const toObj = (dataSource, index) => {
+    if (!dataSource[index].id) {
+      return {
+        data: {
+          phone: dataSource[index].phone,
+          postal: dataSource[index].postal,
+          name: dataSource[index].name,
+          address: dataSource[index].address,
+        },
+      }
+    } else {
+      return {
+        _id: dataSource[index].id,
+        data: {
+          phone: dataSource[index].phone,
+          postal: dataSource[index].postal,
+          name: dataSource[index].name,
+          address: dataSource[index].address,
+        },
+        __v: dataSource[index].v,
+      }
+    }
+  }
+
   const save = async (key) => {
     try {
+      setLoadingTable(true)
       const row = await form.validateFields()
       const dataSource = [...itemsTable],
         index = dataSource.findIndex((item) => key === item.key)
 
+      const item = dataSource[index]
+
       if (index > -1) {
-        const item = dataSource[index]
         dataSource.splice(index, 1, { ...item, ...row })
-        setItemsTable(dataSource)
-        setEditingKey('')
       } else {
         dataSource.push(row)
+      }
+
+      const obj = toObj(dataSource, index)
+
+      let statusCrud = {}
+      // если есть id -> обновление
+      if (!!dataSource[index].id) {
+        statusCrud = await updateRow(key, obj, item, dataSource)
+      } else {
+        // иначе создание
+        statusCrud = await createRow(key, obj)
+        // добавляем id к ново-созданнгому item dataSource
+        dataSource[index].id = statusCrud.data._id
+      }
+
+      if (statusCrud.status === 200) {
         setItemsTable(dataSource)
         setEditingKey('')
+        message(statusCrud.status, statusCrud.statusText, statusCrud.url)
+      } else {
+        cancel()
       }
+      setLoadingTable(false)
     } catch (error) {
       console.log('Validate failed')
-      // TODO: Добавить уведомления об ответе сервера
     }
+  }
+
+  const updateRow = async (key, obj, item) => {
+    let updateRowPromise = await request(
+      `http://178.128.196.163:3000/api/records/${item.id}`,
+      'POST',
+      obj
+    )
+    return updateRowPromise
+  }
+
+  const createRow = async (key, obj) => {
+    let createRowPromise = await request(
+      `http://178.128.196.163:3000/api/records/`,
+      'PUT',
+      obj
+    )
+    return createRowPromise
+  }
+
+  // добавляет строку только на клиенте, запрос на добавление пользователя происходит в функции save
+  const addRow = () => {
+    const dataSource = [...itemsTable],
+      count = dataSource.length
+
+    const newDataRow = {
+      key: count,
+      name: '',
+      address: '',
+      phone: '',
+      postal: '',
+      v: '0',
+    }
+
+    setItemsTable([...dataSource, newDataRow])
+    edit(newDataRow)
+  }
+
+  const deleteRow = async (key) => {
+    setLoadingTable(true)
+    const dataSource = [...itemsTable],
+      index = dataSource.findIndex((item) => key === item.key)
+
+    const _dataSource = dataSource.filter((item) => item.key !== key) // обновленный массив для обновления состояния
+    const _id = dataSource[index].id
+
+    // отправляем запрос на сервер
+    // и если успешно -> обновляем state на клиенте
+    let deleteRow = await request(
+      `http://178.128.196.163:3000/api/records/${_id}`,
+      'DELETE'
+    )
+
+    if (deleteRow.status === 200) {
+      setItemsTable(_dataSource)
+      message(deleteRow.status, deleteRow.statusText, deleteRow.url)
+    }
+    setLoadingTable(false)
   }
 
   // столбцы таблицы
@@ -63,7 +190,6 @@ export const MyTable = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'ID',
-      editable: true,
     },
     {
       title: 'Name',
@@ -126,7 +252,7 @@ export const MyTable = () => {
         itemsTable.length >= 1 ? (
           <Popconfirm
             title="Are you shure to delete row ?"
-            onConfirm={() => handleDeleteRow(record.key)}
+            onConfirm={() => deleteRow(record.key)}
           >
             <a href="/#">Delete</a>
           </Popconfirm>
@@ -185,63 +311,11 @@ export const MyTable = () => {
     }
   })
 
-  useEffect(() => {
-    fetch('http://178.128.196.163:3000/api/records', { method: 'GET' })
-      .then((res) => res.json())
-      .then(
-        (result) => {
-          setIsLoaded(true)
-
-          let tmp = result.map((ele, ind) => {
-            return {
-              key: ind,
-              id: ele._id,
-              name: ele.data.name,
-              address: ele.data.address,
-              phone: ele.data.phone,
-              postal: ele.data.postal,
-              v: ele.__v,
-            }
-          })
-
-          setItemsTable(tmp)
-        },
-        (error) => {
-          setIsLoaded(true)
-          setError(error)
-        }
-      )
-  }, [])
-
-  const handlerAddRow = () => {
-    const dataSource = [...itemsTable],
-      count = dataSource.length
-
-    const newDataRow = {
-      key: count,
-      name: '',
-      address: '',
-      phone: '',
-      postal: '',
-      v: '0',
-    }
-
-    setItemsTable([...dataSource, newDataRow])
-    edit(newDataRow)
-  }
-
-  const handleDeleteRow = (key) => {
-    const dataSource = [...itemsTable]
-    setItemsTable(dataSource.filter((item) => item.key !== key))
-  }
-
   if (error) return <div>Ошибка: {error.message}</div>
-
-  if (!isLoaded) return <div>Загрузка...</div>
 
   return (
     <>
-      <Button onClick={handlerAddRow} type="primary" style={{ margin: 16 }}>
+      <Button onClick={addRow} type="primary" style={{ margin: 16 }}>
         Add a row
       </Button>
       <Form form={form} component={false}>
@@ -251,8 +325,10 @@ export const MyTable = () => {
               cell: EditableCell,
             },
           }}
-          columns={mergedColumns} //{columns}
+          loading={loadingTable}
+          columns={mergedColumns}
           dataSource={itemsTable}
+          hasData={true}
           expandable={{
             expandedRowRender: (record) => (
               <p style={{ margin: 0 }}>__v: {record.v}</p>
