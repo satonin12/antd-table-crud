@@ -8,6 +8,7 @@ import { useMessage } from '../../hooks/message.hook'
 export const MyTable = () => {
   const [itemsTable, setItemsTable] = useState([])
   const [editingKey, setEditingKey] = useState('')
+  const [isDisabledButton, setIsDisabledButton] = useState(false)
   const [loadingTable, setLoadingTable] = useState(false)
 
   const [form] = Form.useForm()
@@ -33,7 +34,7 @@ export const MyTable = () => {
     })
 
     setItemsTable(tmp)
-    message(dataList.status, dataList.statusText, dataList.url)
+    message(dataList.status, dataList.statusText, dataList.url, 'Данные успешно загружены')
     clearError()
     setLoadingTable(false)
   }
@@ -59,6 +60,7 @@ export const MyTable = () => {
 
   const cancel = () => {
     setEditingKey('')
+    setIsDisabledButton(false)
   }
 
   const toObj = (dataSource, index) => {
@@ -116,11 +118,12 @@ export const MyTable = () => {
       if (statusCrud.status === 200) {
         setItemsTable(dataSource)
         setEditingKey('')
-        message(statusCrud.status, statusCrud.statusText, statusCrud.url)
+        message(statusCrud.status, statusCrud.statusText, statusCrud.url, 'Данные успешно сохранены')
       } else {
         cancel()
       }
       setLoadingTable(false)
+      setIsDisabledButton(false)
     } catch (error) {
       console.log('Validate failed')
     }
@@ -146,6 +149,7 @@ export const MyTable = () => {
 
   // добавляет строку только на клиенте, запрос на добавление пользователя происходит в функции save
   const addRow = () => {
+    setIsDisabledButton(true)
     const dataSource = [...itemsTable],
       count = dataSource.length
 
@@ -179,7 +183,7 @@ export const MyTable = () => {
 
     if (deleteRow.status === 200) {
       setItemsTable(_dataSource)
-      message(deleteRow.status, deleteRow.statusText, deleteRow.url)
+      message(deleteRow.status, deleteRow.statusText, deleteRow.url, 'Данные успешно удалены')
     }
     setLoadingTable(false)
   }
@@ -315,7 +319,7 @@ export const MyTable = () => {
 
   return (
     <>
-      <Button onClick={addRow} type="primary" style={{ margin: 16 }}>
+      <Button onClick={addRow} type="primary" style={{ margin: 16 }} disabled={isDisabledButton} >
         Add a row
       </Button>
       <Form form={form} component={false}>

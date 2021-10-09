@@ -55,19 +55,18 @@ export const useMessage = () => {
     },
   })
 
-  const openNotificationWithIcon = (status, statusText, url) => {
+  const openNotificationWithIcon = (status, statusText, url, text) => {
     const NotificationType = statusCodeAnswerServer.get(status.toString())
     const title = NotificationType.key + ' - ' + NotificationType.value.type + ': ' + NotificationType.value.message
 
     notification[NotificationType.value.type]({
-      message: title,
+      message: text, //title,
       // description: `Статус ответа сервера: ${status} - ${statusText} по аддресу (${url})`,
       // description: `Статус ответа сервера: ${status} - ${statusText}`,
     })
   }
 
-  return useCallback((status, statusText, url) => {
-
-    openNotificationWithIcon(status, statusText, url)
+  return useCallback((status, statusText, url, text) => {
+    openNotificationWithIcon(status, statusText, url, text)
   }, [])
 }
