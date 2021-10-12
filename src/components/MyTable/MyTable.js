@@ -24,6 +24,9 @@ export const MyTable = () => {
     let tmp = dataList.data.map((ele, ind) => {
       return {
         key: ind,
+        // key: ind.toString(),
+        // key: 'dataTable-key-' + ind.toString(),
+        // key: ele.id,
         id: ele._id,
         name: ele.data.name,
         address: ele.data.address,
@@ -34,7 +37,12 @@ export const MyTable = () => {
     })
 
     setItemsTable(tmp)
-    message(dataList.status, dataList.statusText, dataList.url, 'Данные успешно загружены')
+    message(
+      dataList.status,
+      dataList.statusText,
+      dataList.url,
+      'Данные успешно загружены'
+    )
     clearError()
     setLoadingTable(false)
   }
@@ -42,11 +50,12 @@ export const MyTable = () => {
   useEffect(() => {
     setLoadingTable(true)
     getData()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isEditing = (record) => record.key === editingKey
 
   const edit = (record) => {
+    setIsDisabledButton(!isDisabledButton)
     form.setFieldsValue({
       ID: '',
       Name: '',
@@ -58,7 +67,10 @@ export const MyTable = () => {
     setEditingKey(record.key)
   }
 
-  const cancel = () => {
+  const cancel = (key = null) => {
+    // если мы после создания записи её отменяем -> удаляем строку из таблицы
+    let tmp = itemsTable[key]
+    if (!tmp.hasOwnProperty('id')) deleteRow(key)
     setEditingKey('')
     setIsDisabledButton(false)
   }
@@ -118,14 +130,20 @@ export const MyTable = () => {
       if (statusCrud.status === 200) {
         setItemsTable(dataSource)
         setEditingKey('')
-        message(statusCrud.status, statusCrud.statusText, statusCrud.url, 'Данные успешно сохранены')
+        message(
+          statusCrud.status,
+          statusCrud.statusText,
+          statusCrud.url,
+          'Данные успешно сохранены'
+        )
       } else {
-        cancel()
+        cancel(key)
       }
       setLoadingTable(false)
       setIsDisabledButton(false)
     } catch (error) {
       console.log('Validate failed')
+      message('Ошибка: ' + error)
     }
   }
 
@@ -154,7 +172,9 @@ export const MyTable = () => {
       count = dataSource.length
 
     const newDataRow = {
+      // key: count.toString(),
       key: count,
+      // key: 'dataTable-key-' + count.toString(),
       name: '',
       address: '',
       phone: '',
@@ -162,8 +182,8 @@ export const MyTable = () => {
       v: '0',
     }
 
-    setItemsTable([...dataSource, newDataRow])
     edit(newDataRow)
+    setItemsTable([...dataSource, newDataRow])
   }
 
   const deleteRow = async (key) => {
@@ -183,7 +203,12 @@ export const MyTable = () => {
 
     if (deleteRow.status === 200) {
       setItemsTable(_dataSource)
-      message(deleteRow.status, deleteRow.statusText, deleteRow.url, 'Данные успешно удалены')
+      message(
+        deleteRow.status,
+        deleteRow.statusText,
+        deleteRow.url,
+        'Данные успешно удалены'
+      )
     }
     setLoadingTable(false)
   }
@@ -234,7 +259,10 @@ export const MyTable = () => {
             >
               Save
             </a>
-            <Popconfirm title="Sure to cancel editing ?" onConfirm={cancel}>
+            <Popconfirm
+              title="Sure to cancel editing ?"
+              onConfirm={() => cancel(record.key)}
+            >
               <a href="/#">Cancel</a>
             </Popconfirm>
           </>
@@ -252,15 +280,29 @@ export const MyTable = () => {
       title: 'Delete',
       dataIndex: 'delete',
       key: 'x',
-      render: (_, record) =>
-        itemsTable.length >= 1 ? (
-          <Popconfirm
-            title="Are you shure to delete row ?"
-            onConfirm={() => deleteRow(record.key)}
-          >
-            <a href="/#">Delete</a>
-          </Popconfirm>
-        ) : null,
+      render: (_, record) => {
+        const editable = isEditing(record)
+
+        return editable ? (
+          <>
+            <Typography.Link
+              disabled={editingKey !== ''}
+              onClick={() => deleteRow(record)}
+            >
+              Delete
+            </Typography.Link>
+          </>
+        ) : (
+          <Typography.Link disabled={editingKey !== ''}>
+            <Popconfirm
+              title="Are you shure to delete row ?"
+              onConfirm={() => deleteRow(record.key)}
+            >
+              Delete
+            </Popconfirm>
+          </Typography.Link>
+        )
+      },
     },
   ]
 
@@ -319,7 +361,12 @@ export const MyTable = () => {
 
   return (
     <>
-      <Button onClick={addRow} type="primary" style={{ margin: 16 }} disabled={isDisabledButton} >
+      <Button
+        onClick={addRow}
+        type="primary"
+        style={{ margin: 16 }}
+        disabled={isDisabledButton}
+      >
         Add a row
       </Button>
       <Form form={form} component={false}>

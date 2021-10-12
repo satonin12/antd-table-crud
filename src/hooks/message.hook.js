@@ -57,7 +57,7 @@ export const useMessage = () => {
 
   const openNotificationWithIcon = (status, statusText, url, text) => {
     const NotificationType = statusCodeAnswerServer.get(status.toString())
-    const title = NotificationType.key + ' - ' + NotificationType.value.type + ': ' + NotificationType.value.message
+    // const title = NotificationType.key + ' - ' + NotificationType.value.type + ': ' + NotificationType.value.message
 
     notification[NotificationType.value.type]({
       message: text, //title,
@@ -67,6 +67,6 @@ export const useMessage = () => {
   }
 
   return useCallback((status, statusText, url, text) => {
-    openNotificationWithIcon(status, statusText, url, text)
+    openNotificationWithIcon(status, statusText, url, text) // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }

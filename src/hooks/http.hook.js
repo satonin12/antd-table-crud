@@ -4,6 +4,7 @@ export const useFetch = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const request = useCallback(async (url, method = 'GET', body = null, headers = {}) => {
     setLoading(true)
     try {
