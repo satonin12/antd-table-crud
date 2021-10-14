@@ -10,6 +10,7 @@ export const MyTable = () => {
   const [editingKey, setEditingKey] = useState('')
   const [isDisabledButton, setIsDisabledButton] = useState(false)
   const [loadingTable, setLoadingTable] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const [form] = Form.useForm()
   const { error, request, clearError } = useFetch()
@@ -22,17 +23,27 @@ export const MyTable = () => {
     )
 
     let tmp = dataList.data.map((ele, ind) => {
+      if (ele.hasOwnProperty('data')) {
+        return {
+          // key: ind,
+          key: ele._id,
+          id: ele._id,
+          v: ele.__v,
+          name: ele.data.name,
+          address: ele.data.address,
+          phone: ele.data.phone,
+          postal: ele.data.postal,
+        }
+      }
+
       return {
-        key: ind,
-        // key: ind.toString(),
-        // key: 'dataTable-key-' + ind.toString(),
-        // key: ele.id,
+        key: ele._id,
         id: ele._id,
-        name: ele.data.name,
-        address: ele.data.address,
-        phone: ele.data.phone,
-        postal: ele.data.postal,
         v: ele.__v,
+        name: '',
+        address: '',
+        phone: '',
+        postal: '',
       }
     })
 
@@ -123,8 +134,9 @@ export const MyTable = () => {
       } else {
         // иначе создание
         statusCrud = await createRow(key, obj)
-        // добавляем id к ново-созданнгому item dataSource
+        // добавляем id и key к ново-созданному item в dataSource
         dataSource[index].id = statusCrud.data._id
+        dataSource[index].key = statusCrud.data._id
       }
 
       if (statusCrud.status === 200) {
@@ -172,9 +184,7 @@ export const MyTable = () => {
       count = dataSource.length
 
     const newDataRow = {
-      // key: count.toString(),
-      key: count,
-      // key: 'dataTable-key-' + count.toString(),
+      key: count, // ставим временно, пока не пришел id
       name: '',
       address: '',
       phone: '',
@@ -184,6 +194,9 @@ export const MyTable = () => {
 
     edit(newDataRow)
     setItemsTable([...dataSource, newDataRow])
+    // ставим pagination на последнюю страницу
+    const calcCurrentPage = Math.trunc(count / 10) + 1
+    setCurrentPage(calcCurrentPage)
   }
 
   const deleteRow = async (key) => {
@@ -211,6 +224,10 @@ export const MyTable = () => {
       )
     }
     setLoadingTable(false)
+  }
+
+  const onPageChange = (page) => {
+    setCurrentPage(page)
   }
 
   // столбцы таблицы
@@ -386,6 +403,7 @@ export const MyTable = () => {
             ),
             rowExpandable: (record) => record.name !== 'Not Expandable',
           }}
+          pagination={{ current: currentPage, onChange: onPageChange }}
         />
       </Form>
     </>
