@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Popconfirm, Table, Typography, Form, Input } from 'antd'
 
-import 'antd/dist/antd.css'
 import { useFetch } from '../../hooks/http.hook'
 import { useMessage } from '../../hooks/message.hook'
+
+import 'antd/dist/antd.css'
 
 export const MyTable = () => {
   const [itemsTable, setItemsTable] = useState([])
@@ -25,7 +26,6 @@ export const MyTable = () => {
     let tmp = dataList.data.map((ele, ind) => {
       if (ele.hasOwnProperty('data')) {
         return {
-          // key: ind,
           key: ele._id,
           id: ele._id,
           v: ele.__v,
@@ -79,9 +79,13 @@ export const MyTable = () => {
   }
 
   const cancel = (key = null) => {
-    // если мы после создания записи её отменяем -> удаляем строку из таблицы
-    let tmp = itemsTable[key]
-    if (!tmp.hasOwnProperty('id')) deleteRow(key)
+    if (key === null) {
+      // получаем последни   индекс элемента т.к новая строка всегда добавляется последней
+      let index = itemsTable.length - 1
+      // если мы после создания записи её отменяем -> удаляем строку из таблицы
+      deleteRow(index)
+    }
+
     setEditingKey('')
     setIsDisabledButton(false)
   }
@@ -278,7 +282,7 @@ export const MyTable = () => {
             </a>
             <Popconfirm
               title="Sure to cancel editing ?"
-              onConfirm={() => cancel(record.key)}
+              onConfirm={() => cancel(record.id)}
             >
               <a href="/#">Cancel</a>
             </Popconfirm>
