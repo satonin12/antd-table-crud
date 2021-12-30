@@ -392,7 +392,7 @@ export const MyTable = () => {
     }
   })
 
-  if (error) return <div>Ошибка: {error.message}</div>
+  //if (error) return <div>Ошибка: {error.message}</div>
 
   return (
     <>
