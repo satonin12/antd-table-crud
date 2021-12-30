@@ -22,38 +22,42 @@ export const MyTable = () => {
       'http://178.128.196.163:3000/api/records',
       'GET'
     )
+    
+    if(dataList.status !== 200 ) {
+      message('Ошибка получения данных - ' + dataList.statusText)
+    } else {
+      let tmp = dataList.data.map((ele, ind) => {
+        if (ele.hasOwnProperty('data')) {
+          return {
+            key: ele._id,
+            id: ele._id,
+            v: ele.__v,
+            name: ele.data.name,
+            address: ele.data.address,
+            phone: ele.data.phone,
+            postal: ele.data.postal,
+          }
+        }
 
-    let tmp = dataList.data.map((ele, ind) => {
-      if (ele.hasOwnProperty('data')) {
         return {
           key: ele._id,
           id: ele._id,
           v: ele.__v,
-          name: ele.data.name,
-          address: ele.data.address,
-          phone: ele.data.phone,
-          postal: ele.data.postal,
+          name: '',
+          address: '',
+          phone: '',
+          postal: '',
         }
-      }
+      })
 
-      return {
-        key: ele._id,
-        id: ele._id,
-        v: ele.__v,
-        name: '',
-        address: '',
-        phone: '',
-        postal: '',
-      }
-    })
-
-    setItemsTable(tmp)
-    message(
-      dataList.status,
-      dataList.statusText,
-      dataList.url,
-      'Данные успешно загружены'
-    )
+      setItemsTable(tmp)
+      message(
+        dataList.status,
+        dataList.statusText,
+        dataList.url,
+        'Данные успешно загружены'
+      )
+    }
     clearError()
     setLoadingTable(false)
   }
