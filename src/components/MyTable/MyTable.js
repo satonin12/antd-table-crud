@@ -24,7 +24,7 @@ export const MyTable = () => {
         'GET'
       )
 
-      if(dataList.status !== 200 ) {
+      if(typeof dataList === 'undefined') {
         message('Ошибка получения данных - ' + dataList.statusText)
       } else {
         let tmp = dataList.data.map((ele, ind) => {
