@@ -65,8 +65,11 @@ export const MyTable = () => {
       console.log(error)
       message(
           'Произошла ошибка, пожалуйста попробуйте позже'
-        )
+      )
+      clearError()
+      setLoadingTable(false)
     }
+    
   }
 
   useEffect(() => {
