@@ -14,7 +14,7 @@ export const MyTable = () => {
   const [currentPage, setCurrentPage] = useState(1)
 
   const [form] = Form.useForm()
-  const { error, request, clearError } = useFetch()
+  const { request, clearError } = useFetch()
   const message = useMessage()
 
   const getData = async () => {
