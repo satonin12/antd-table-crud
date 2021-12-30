@@ -69,7 +69,7 @@ export const MyTable = () => {
       clearError()
       setLoadingTable(false)
     }
-    
+    setLoadingTable(false)
   }
 
   useEffect(() => {
